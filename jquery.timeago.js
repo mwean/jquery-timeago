@@ -65,6 +65,21 @@
       }
     },
 
+    registry: {},
+    nextId: 1,
+
+    timeagoId: function() {
+      id = $t.nextId
+      $t.nextId = id + 1
+      return id
+    },
+
+    refreshRegistry: function() {
+      $.each($t.registry, function(key, value) {
+        value();
+      });
+    },
+
     inWords: function(distanceMillis) {
       if(!this.settings.allowPast && ! this.settings.allowFuture) {
           throw 'timeago allowPast and allowFuture settings can not both be set to false.';
@@ -141,7 +156,10 @@
       refresh_el();
       var $s = $t.settings;
       if ($s.refreshMillis > 0) {
-        this._timeagoInterval = setInterval(refresh_el, $s.refreshMillis);
+        id = $t.timeagoId()
+        this.timeagoId = id
+        $t.registry[id] = refresh_el;
+        $t.interval = $t.interval || window.setInterval($t.refreshRegistry, $s.refreshMillis);
       }
     },
     update: function(time){
@@ -155,9 +173,11 @@
       refresh.apply(this);
     },
     dispose: function () {
-      if (this._timeagoInterval) {
-        window.clearInterval(this._timeagoInterval);
-        this._timeagoInterval = null;
+      delete $t.registry[this.timeagoId]
+
+      if (Object.getOwnPropertyNames($t.registry).length == 0) {
+        window.clearInterval($t.interval);
+        $t.interval = null;
       }
     }
   };
